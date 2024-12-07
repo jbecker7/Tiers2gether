@@ -12,10 +12,12 @@
   "description": "",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "firebase-admin": "^13.0.1"
   },
   "devDependencies": {
+    "@types/babel__template": "^7.4.4",
+    "@types/bonjour": "^3.5.13",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.1",
