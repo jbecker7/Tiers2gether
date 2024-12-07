@@ -2,6 +2,7 @@ import express, { Request, Response, RequestHandler } from 'express';
 import admin from "firebase-admin";
 import { ServiceAccount } from "firebase-admin";
 import cors from 'cors';
+import serviceAccount from "./firebase/serviceAccountKey.json";
 
 import { 
   TierBoard, 
@@ -12,7 +13,6 @@ import {
   UserProfile
 } from "./types";
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
 interface BoardParams {
   boardId: string;
 }
