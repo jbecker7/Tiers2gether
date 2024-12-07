@@ -12,9 +12,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js (hope this works)
+      - name: Use Node.js
         uses: actions/setup-node@v2
         with:
           node-version: "16"
-      - run: npm ci
-      - run: npm test
+      - working-directory: ./server
+        run: |
+          npm ci
+          npm test
