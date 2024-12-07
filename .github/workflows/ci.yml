@@ -16,6 +16,11 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "16"
+      - name: Create Service Account Key
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_KEY" > server/serviceAccountKey.json
       - working-directory: ./server
         run: |
           npm ci
