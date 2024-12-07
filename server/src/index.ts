@@ -25,9 +25,9 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as ServiceAccount),
 });
 
-const db = admin.firestore();
+export const db = admin.firestore();
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(cors());
 
@@ -245,6 +245,8 @@ app.get("/boards/:boardId", getBoard);
 app.get("/boards", getBoards);
 
 const PORT = process.env.PORT || 5003;
-app.listen(PORT, () => {
+export const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+export default app;
