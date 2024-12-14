@@ -28,6 +28,7 @@ export interface TierBoard {
   updatedAt: Date;
   creatorUsername: string;
   accessKey: string;
+  allowedUsers: string[];
 }
 
 export interface UserProfile {
@@ -56,4 +57,14 @@ export interface UpdateRankingRequest {
 export interface AddTagRequest {
   boardId: string;
   tag: string;
+}
+
+export interface CreateBoardRequest {
+  name: string;
+  initialTags?: string[];
+  creatorUsername: string;
+}
+
+export interface AddUserToBoardRequest {
+  username: string;
 }

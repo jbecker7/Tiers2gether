@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import TierBoardComponent from "./TierBoard";
 import BoardManagement from "./BoardManagement";
-import UsernameSetup from "./UsernameSetup";
 import { createTierBoard, getBoards, deleteBoard, updateBoard } from "./api";
 import { TierBoard } from "./types";
 import "./App.css";
@@ -63,14 +62,55 @@ function App() {
     localStorage.setItem("lastSelectedBoard", boardId);
   };
 
+  const handleSetUsername = (newUsername: string) => {
+    localStorage.setItem("username", newUsername);
+    setUsername(newUsername);
+    setShowUsernameSetup(false);
+  };
+
   if (showUsernameSetup) {
     return (
-      <UsernameSetup
-        onUsernameSet={(newUsername) => {
-          setUsername(newUsername);
-          setShowUsernameSetup(false);
-        }}
-      />
+      <div className="fixed inset-0 bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+          <h2 className="text-xl font-bold mb-4">Choose Your Username</h2>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const input = e.currentTarget.elements.namedItem(
+                "username"
+              ) as HTMLInputElement;
+              if (input.value.trim().length >= 3) {
+                handleSetUsername(input.value.trim());
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                minLength={3}
+                required
+                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter username (minimum 3 characters)"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Set Username
+            </button>
+          </form>
+        </div>
+      </div>
     );
   }
 
@@ -145,7 +185,7 @@ function App() {
             <TierBoardComponent
               key={currentBoardId}
               boardId={currentBoardId}
-              userId={username} // Changed from mockUserId to username
+              userId={username}
             />
           </div>
         )}

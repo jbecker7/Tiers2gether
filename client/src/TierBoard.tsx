@@ -7,8 +7,10 @@ import {
   addCharacterToBoard,
   updateCharacterRanking,
   addTagToBoard,
+  addUserToBoard,
 } from "./api";
 import TierListDisplay from "./TierListDisplay";
+
 interface TierBoardProps {
   boardId: string;
   userId: string;
@@ -28,6 +30,9 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
   const [isAddingCharacter, setIsAddingCharacter] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [newUser, setNewUser] = useState("");
   const [newCharacter, setNewCharacter] = useState({
     name: "",
     series: "",
@@ -37,6 +42,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const loadBoard = async () => {
@@ -76,7 +82,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
       const character: Omit<Character, "id"> = {
         ...newCharacter,
         tags: selectedTags,
-        rankings: [], // Make sure rankings is included
+        rankings: [],
       };
 
       await addCharacterToBoard(boardId, character);
@@ -133,13 +139,23 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
     }
   };
 
+  const handleCopyAccessKey = async () => {
+    if (!board) return;
+    try {
+      await navigator.clipboard.writeText(board.accessKey);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy access key:", err);
+    }
+  };
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  // Group characters by their tier
   const charactersByTier = Object.entries(board?.characters || {}).reduce(
     (acc, [id, character]) => {
       const userRanking = character.rankings.find((r) => r.userId === userId);
@@ -165,11 +181,15 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      {/* Header */}
       <div className="max-w-6xl mx-auto px-4 mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{board.name}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold text-gray-900">{board.name}</h1>
+              <span className="text-sm text-gray-500">
+                Created by: {board.creatorUsername}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {board.tagList.map((tag) => (
                 <span
@@ -187,18 +207,38 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
               </button>
             </div>
           </div>
-          <button
-            onClick={() => setIsAddingCharacter(true)}
-            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            disabled={isLoading}
-          >
-            <Plus size={20} />
-            Add Character
-          </button>
+          <div className="flex items-center gap-2">
+            {board.creatorUsername === userId && (
+              <button
+                onClick={() => setIsAddingUser(true)}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                Add User
+              </button>
+            )}
+            <button
+              onClick={() => setShowShareDialog(true)}
+              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            >
+              Share Board
+            </button>
+            <button
+              onClick={() => setIsAddingCharacter(true)}
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              disabled={isLoading}
+            >
+              <Plus size={20} />
+              Add Character
+            </button>
+          </div>
         </div>
+        {board.allowedUsers && board.allowedUsers.length > 0 && (
+          <div className="mt-2 text-sm text-gray-500">
+            Shared with: {board.allowedUsers.join(", ")}
+          </div>
+        )}
       </div>
 
-      {/* Tier List */}
       <div className="max-w-6xl mx-auto px-4 mb-8">
         <TierListDisplay
           characters={board.characters}
@@ -214,13 +254,11 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         className="relative z-50"
       >
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6">
             <Dialog.Title className="text-xl font-bold mb-4">
               Add New Character
             </Dialog.Title>
-
             <form onSubmit={handleAddCharacter} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -236,7 +274,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Series
@@ -251,7 +288,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Image URL
@@ -269,7 +305,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Tags
@@ -291,7 +326,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   ))}
                 </div>
               </div>
-
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
@@ -313,6 +347,114 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         </div>
       </Dialog>
 
+      {/* Add User Modal */}
+      <Dialog
+        open={isAddingUser}
+        onClose={() => setIsAddingUser(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="w-full max-w-sm bg-white rounded-lg p-6">
+            <Dialog.Title className="text-xl font-bold mb-4">
+              Add User to Board
+            </Dialog.Title>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await addUserToBoard(boardId, newUser);
+                  setIsAddingUser(false);
+                  setNewUser("");
+                  // Refresh board to show updated users
+                  const updatedBoard = await getTierBoard(boardId);
+                  setBoard(updatedBoard);
+                } catch (err) {
+                  console.error("Failed to add user:", err);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={newUser}
+                  onChange={(e) => setNewUser(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingUser(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Add User
+                </button>
+              </div>
+            </form>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog
+        open={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="w-full max-w-sm bg-white rounded-lg p-6">
+            <Dialog.Title className="text-xl font-bold mb-4">
+              Share Board
+            </Dialog.Title>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Board Access Key
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={board.accessKey}
+                    readOnly
+                    className="w-full border rounded-lg px-3 py-2 bg-gray-50"
+                  />
+                  <button
+                    onClick={handleCopyAccessKey}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    {copySuccess ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  Share this access key with others to let them view this board
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowShareDialog(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
       {/* Add Tag Modal */}
       <Dialog
         open={isAddingTag}
@@ -320,13 +462,11 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         className="relative z-50"
       >
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-sm bg-white rounded-lg p-6">
             <Dialog.Title className="text-xl font-bold mb-4">
               Add New Tag
             </Dialog.Title>
-
             <form onSubmit={handleAddTag} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -340,7 +480,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   required
                 />
               </div>
-
               <div className="flex justify-end gap-3">
                 <button
                   type="button"

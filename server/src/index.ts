@@ -10,13 +10,18 @@ import {
   AddCharacterRequest, 
   UpdateRankingRequest,
   AddTagRequest,
-  UserProfile
+  UserProfile,
+  AddUserToBoardRequest
 } from "./types";
 
 function generateAccessKey(): string {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15);
 }
+
+const userHasAccess = (board: TierBoard, username: string): boolean => {
+  return board.creatorUsername === username || board.allowedUsers.includes(username);
+};
 
 interface BoardParams {
   boardId: string;
@@ -78,7 +83,8 @@ const createBoard: RequestHandler = async (req, res): Promise<void> => {
       tagList: initialTags,
       characters: {},
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      allowedUsers: []  // Initialize empty array of allowed users
     };
     
     await boardRef.set(board);
@@ -88,6 +94,7 @@ const createBoard: RequestHandler = async (req, res): Promise<void> => {
     res.status(400).json({ error: errorMessage });
   }
 };
+
 
 // Add character to board handler
 const addCharacterToBoard: RequestHandler<BoardParams, any, AddCharacterRequest> = async (req, res): Promise<void> => {
@@ -194,16 +201,27 @@ const addTag: RequestHandler<BoardParams, any, AddTagRequest> = async (req, res)
   }
 };
 
-// Get board handler
-const getBoard: RequestHandler<BoardParams> = async (req, res): Promise<void> => {
+const getBoard: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { boardId } = req.params;
+    const username = req.headers['x-username'] as string;
+    
+    if (!username) {
+      res.status(401).json({ error: "Username required" });
+      return;
+    }
+
     const boardRef = db.collection("tierBoards").doc(boardId);
     const boardDoc = await boardRef.get();
     const board = boardDoc.data() as TierBoard;
     
     if (!board) {
       res.status(404).json({ error: "Board not found" });
+      return;
+    }
+
+    if (!userHasAccess(board, username)) {
+      res.status(403).json({ error: "Access denied" });
       return;
     }
     
@@ -240,13 +258,36 @@ const getBoardByAccessKey: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-const getBoards: RequestHandler = async (_req, res): Promise<void> => {
+const getBoards: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const boardsSnapshot = await db.collection("tierBoards").get();
-    const boards = boardsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const username = req.headers['x-username'] as string;
+    if (!username) {
+      res.status(401).json({ error: "Username required" });
+      return;
+    }
+
+    // Get boards where user is creator
+    const createdBoardsQuery = await db.collection("tierBoards")
+      .where("creatorUsername", "==", username)
+      .get();
+
+    // Get boards where user is in allowedUsers
+    const sharedBoardsQuery = await db.collection("tierBoards")
+      .where("allowedUsers", "array-contains", username)
+      .get();
+
+    // Combine both sets of boards
+    const boards = [
+      ...createdBoardsQuery.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })),
+      ...sharedBoardsQuery.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+    ];
+
     res.status(200).json(boards);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -264,7 +305,36 @@ app.delete("/boards/:boardId", async (req: Request<BoardParams>, res: Response):
     res.status(500).json({ error: errorMessage });
   }
 });
+const addUserToBoard: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const { boardId } = req.params;
+    const { username } = req.body as AddUserToBoardRequest;
+    const requestingUsername = req.headers['x-username'] as string;
 
+    const boardRef = db.collection("tierBoards").doc(boardId);
+    const board = await boardRef.get();
+    const boardData = board.data() as TierBoard;
+
+    if (!board.exists) {
+      res.status(404).json({ error: "Board not found" });
+      return;
+    }
+
+    if (boardData.creatorUsername !== requestingUsername) {
+      res.status(403).json({ error: "Only the creator can add users" });
+      return;
+    }
+
+    await boardRef.update({
+      allowedUsers: admin.firestore.FieldValue.arrayUnion(username)
+    });
+
+    res.status(200).json({ message: "User added successfully" });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: errorMessage });
+  }
+};
 
 // Route definitions
 app.post("/characters", addCharacter);
@@ -276,6 +346,7 @@ app.post("/boards/:boardId/tags", addTag);
 app.get("/boards/:boardId", getBoard);
 app.get("/boards", getBoards);
 app.get("/boards/access/:accessKey", getBoardByAccessKey);
+app.post("/boards/:boardId/users", addUserToBoard);
 
 const PORT = process.env.PORT || 5003;
 export const server = app.listen(PORT, () => {

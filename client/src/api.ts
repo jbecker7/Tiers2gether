@@ -1,15 +1,21 @@
-// api.ts
 import axios, { AxiosError } from 'axios';
-import { 
-  TierBoard, 
-  Character, 
-  CreateBoardRequest, 
-  // UpdateRankingRequest 
+import {
+  TierBoard,
+  Character,
+  CreateBoardRequest,
 } from './types';
 
 const BASE_URL = 'http://localhost:5003';
 
-// Custom error handling, might make it more user friendly later on, rn mainly for me
+// Helper to get headers with username
+const getHeaders = () => {
+  const username = localStorage.getItem('username');
+  return {
+    'Content-Type': 'application/json',
+    'X-Username': username || ''
+  };
+};
+
 const handleApiError = (error: unknown) => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError;
@@ -24,7 +30,7 @@ const handleApiError = (error: unknown) => {
 
 export const fetchCharacters = async (): Promise<Character[]> => {
   try {
-    const response = await axios.get(`${BASE_URL}/characters`);
+    const response = await axios.get(`${BASE_URL}/characters`, { headers: getHeaders() });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -39,7 +45,7 @@ export const addCharacter = async (characterData: {
   tags: string[];
 }): Promise<Character> => {
   try {
-    const response = await axios.post(`${BASE_URL}/characters`, characterData);
+    const response = await axios.post(`${BASE_URL}/characters`, characterData, { headers: getHeaders() });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -49,7 +55,7 @@ export const addCharacter = async (characterData: {
 
 export const createTierBoard = async (data: CreateBoardRequest): Promise<TierBoard> => {
   try {
-    const response = await axios.post(`${BASE_URL}/boards`, data);
+    const response = await axios.post(`${BASE_URL}/boards`, data, { headers: getHeaders() });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -59,7 +65,7 @@ export const createTierBoard = async (data: CreateBoardRequest): Promise<TierBoa
 
 export const getTierBoard = async (boardId: string): Promise<TierBoard> => {
   try {
-    const response = await axios.get(`${BASE_URL}/boards/${boardId}`);
+    const response = await axios.get(`${BASE_URL}/boards/${boardId}`, { headers: getHeaders() });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -68,18 +74,19 @@ export const getTierBoard = async (boardId: string): Promise<TierBoard> => {
 };
 
 export const addCharacterToBoard = async (
-  boardId: string, 
+  boardId: string,
   character: Omit<Character, 'id'>
 ): Promise<Character> => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/boards/${boardId}/characters`, 
-      { 
+      `${BASE_URL}/boards/${boardId}/characters`,
+      {
         character: {
           ...character,
-          rankings: [] // Initialize empty rankings array
+          rankings: []
         }
-      }
+      },
+      { headers: getHeaders() }
     );
     return response.data;
   } catch (error) {
@@ -97,10 +104,11 @@ export const updateCharacterRanking = async (
   try {
     const response = await axios.post(
       `${BASE_URL}/boards/${boardId}/characters/${characterId}/ranking`,
-      { 
+      {
         tier,
-        userId // Include userId in the request
-      }
+        userId
+      },
+      { headers: getHeaders() }
     );
     return response.data;
   } catch (error) {
@@ -113,7 +121,8 @@ export const addTagToBoard = async (boardId: string, tag: string): Promise<{ tag
   try {
     const response = await axios.post(
       `${BASE_URL}/boards/${boardId}/tags`,
-      { tag }
+      { tag },
+      { headers: getHeaders() }
     );
     return response.data;
   } catch (error) {
@@ -121,9 +130,10 @@ export const addTagToBoard = async (boardId: string, tag: string): Promise<{ tag
     throw error;
   }
 };
+
 export const getBoards = async (): Promise<TierBoard[]> => {
   try {
-    const response = await axios.get(`${BASE_URL}/boards`);
+    const response = await axios.get(`${BASE_URL}/boards`, { headers: getHeaders() });
     return response.data;
   } catch (error) {
     console.error('Error fetching boards:', error);
@@ -133,7 +143,7 @@ export const getBoards = async (): Promise<TierBoard[]> => {
 
 export const deleteBoard = async (boardId: string): Promise<void> => {
   try {
-    await axios.delete(`${BASE_URL}/boards/${boardId}`);
+    await axios.delete(`${BASE_URL}/boards/${boardId}`, { headers: getHeaders() });
   } catch (error) {
     console.error('Error deleting board:', error);
     throw error;
@@ -142,10 +152,37 @@ export const deleteBoard = async (boardId: string): Promise<void> => {
 
 export const updateBoard = async (boardId: string, updates: { name: string }): Promise<TierBoard> => {
   try {
-    const response = await axios.patch(`${BASE_URL}/boards/${boardId}`, updates);
+    const response = await axios.patch(`${BASE_URL}/boards/${boardId}`, updates, { headers: getHeaders() });
     return response.data;
   } catch (error) {
     console.error('Error updating board:', error);
+    throw error;
+  }
+};
+
+// New functions for board access
+export const addUserToBoard = async (boardId: string, username: string): Promise<void> => {
+  try {
+    await axios.post(
+      `${BASE_URL}/boards/${boardId}/users`,
+      { username },
+      { headers: getHeaders() }
+    );
+  } catch (error) {
+    console.error('Error adding user to board:', error);
+    throw error;
+  }
+};
+
+export const getBoardByAccessKey = async (accessKey: string): Promise<TierBoard> => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/boards/access/${accessKey}`,
+      { headers: getHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching board by access key:', error);
     throw error;
   }
 };
