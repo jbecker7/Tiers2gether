@@ -13,6 +13,11 @@ import {
   UserProfile
 } from "./types";
 
+function generateAccessKey(): string {
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
+}
+
 interface BoardParams {
   boardId: string;
 }
@@ -60,15 +65,16 @@ const getCharacters: RequestHandler = async (_req, res): Promise<void> => {
   }
 };
 
-// Create board handler
 const createBoard: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const { name, initialTags = [] } = req.body as CreateBoardRequest;
+    const { name, initialTags = [], creatorUsername } = req.body as CreateBoardRequest;
     const boardRef = db.collection("tierBoards").doc();
     
     const board: TierBoard = {
       id: boardRef.id,
       name,
+      accessKey: generateAccessKey(),
+      creatorUsername,
       tagList: initialTags,
       characters: {},
       createdAt: new Date(),
@@ -208,6 +214,32 @@ const getBoard: RequestHandler<BoardParams> = async (req, res): Promise<void> =>
   }
 };
 
+const getBoardByAccessKey: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const { accessKey } = req.params;
+    
+    const boardsSnapshot = await db.collection("tierBoards")
+      .where("accessKey", "==", accessKey)
+      .limit(1)
+      .get();
+
+    if (boardsSnapshot.empty) {
+      res.status(404).json({ error: "Board not found" });
+      return;
+    }
+
+    const board = {
+      id: boardsSnapshot.docs[0].id,
+      ...boardsSnapshot.docs[0].data()
+    };
+    
+    res.status(200).json(board);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({ error: errorMessage });
+  }
+};
+
 const getBoards: RequestHandler = async (_req, res): Promise<void> => {
   try {
     const boardsSnapshot = await db.collection("tierBoards").get();
@@ -243,6 +275,7 @@ app.post("/boards/:boardId/characters/:characterId/ranking", updateCharacterRank
 app.post("/boards/:boardId/tags", addTag);
 app.get("/boards/:boardId", getBoard);
 app.get("/boards", getBoards);
+app.get("/boards/access/:accessKey", getBoardByAccessKey);
 
 const PORT = process.env.PORT || 5003;
 export const server = app.listen(PORT, () => {

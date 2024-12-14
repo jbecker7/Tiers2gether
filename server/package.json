@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev src/index.ts",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "dev": "ts-node-dev src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +13,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "firebase-admin": "^13.0.1"
+    "firebase-admin": "^13.0.1",
+    "react-beautiful-dnd": "^13.1.1"
   },
   "devDependencies": {
     "@types/babel__template": "^7.4.4",

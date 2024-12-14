@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import { Plus } from "lucide-react";
-import { TierBoard, Character } from "./types";
+import { TierBoard, Character, CharacterRanking } from "./types";
 import {
   getTierBoard,
   addCharacterToBoard,
@@ -33,6 +33,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
     series: "",
     imageUrl: "",
     tags: [] as string[],
+    rankings: [] as CharacterRanking[],
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
@@ -75,12 +76,19 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
       const character: Omit<Character, "id"> = {
         ...newCharacter,
         tags: selectedTags,
+        rankings: [], // Make sure rankings is included
       };
 
       await addCharacterToBoard(boardId, character);
       const updatedBoard = await getTierBoard(boardId);
       setBoard(updatedBoard);
-      setNewCharacter({ name: "", series: "", imageUrl: "", tags: [] });
+      setNewCharacter({
+        name: "",
+        series: "",
+        imageUrl: "",
+        tags: [],
+        rankings: [],
+      });
       setSelectedTags([]);
       setIsAddingCharacter(false);
     } catch (err) {
