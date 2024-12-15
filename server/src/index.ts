@@ -235,7 +235,13 @@ const getBoard: RequestHandler = async (req, res): Promise<void> => {
 const getBoardByAccessKey: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { accessKey } = req.params;
+    const username = req.headers['x-username'] as string;
     
+    if (!username) {
+      res.status(401).json({ error: "Username required" });
+      return;
+    }
+
     const boardsSnapshot = await db.collection("tierBoards")
       .where("accessKey", "==", accessKey)
       .limit(1)
@@ -246,12 +252,28 @@ const getBoardByAccessKey: RequestHandler = async (req, res): Promise<void> => {
       return;
     }
 
-    const board = {
-      id: boardsSnapshot.docs[0].id,
-      ...boardsSnapshot.docs[0].data()
+    const boardRef = boardsSnapshot.docs[0].ref;
+    const boardData = boardsSnapshot.docs[0].data() as TierBoard;
+
+    // Don't add the user if they're already the creator or in allowedUsers
+    if (boardData.creatorUsername !== username && 
+        !boardData.allowedUsers?.includes(username)) {
+      // Add the user to allowedUsers
+      await boardRef.update({
+        allowedUsers: admin.firestore.FieldValue.arrayUnion(username)
+      });
+
+      // Update the boardData to include the new user
+      boardData.allowedUsers = [...(boardData.allowedUsers || []), username];
+    }
+
+    // Return the board with its ID
+    const updatedBoard = {
+      ...boardData,
+      id: boardsSnapshot.docs[0].id
     };
     
-    res.status(200).json(board);
+    res.status(200).json(updatedBoard);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({ error: errorMessage });
