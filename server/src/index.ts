@@ -2,17 +2,62 @@ import express, { Request, Response, RequestHandler } from 'express';
 import admin from "firebase-admin";
 import { ServiceAccount } from "firebase-admin";
 import cors from 'cors';
+import session from 'express-session';
+import bcrypt from 'bcryptjs';
 import serviceAccount from "./firebase/serviceAccountKey.json";
 
 import { 
   TierBoard, 
   CreateBoardRequest, 
-  AddCharacterRequest, 
   UpdateRankingRequest,
   AddTagRequest,
   UserProfile,
-  AddUserToBoardRequest
+  AddUserToBoardRequest,
+  User,
+  LoginRequest,
+  RegisterRequest,
+  Character
 } from "./types";
+
+// Add this interface for character requests
+interface AddCharacterRequest {
+  boardId: string;
+  character: Omit<Character, 'id'>;
+}
+
+// Initialize express
+export const app = express();
+
+declare module 'express-session' {
+  interface SessionData {
+    username: string;
+  }
+}
+
+// Middleware
+app.use(express.json());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
+// Session middleware
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+  }
+}));
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as ServiceAccount),
+});
+
+export const db = admin.firestore();
 
 function generateAccessKey(): string {
   return Math.random().toString(36).substring(2, 15) + 
@@ -31,17 +76,96 @@ interface CharacterParams extends BoardParams {
   characterId: string;
 }
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount as ServiceAccount),
-});
+// Auth Handlers
+const registerUser: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const { username, password } = req.body as RegisterRequest;
+    
+    const userSnapshot = await db.collection('users')
+      .where('username', '==', username)
+      .get();
 
-export const db = admin.firestore();
+    if (!userSnapshot.empty) {
+      res.status(400).json({ error: "Username already exists" });
+      return;
+    }
 
-export const app = express();
-app.use(express.json());
-app.use(cors());
+    const passwordHash = await bcrypt.hash(password, 10);
 
-// Add character handler (each time we add a new character)
+    const userRef = db.collection('users').doc();
+    const user: User = {
+      username,
+      passwordHash,
+      createdAt: new Date()
+    };
+
+    await userRef.set(user);
+
+    if (req.session) {
+      req.session.username = username;
+    }
+    
+    res.status(201).json({ username });
+  } catch (error) {
+    res.status(500).json({ error: "Registration failed" });
+  }
+};
+
+const loginUser: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const { username, password } = req.body as LoginRequest;
+    
+    const userSnapshot = await db.collection('users')
+      .where('username', '==', username)
+      .get();
+
+    if (userSnapshot.empty) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    const userData = userSnapshot.docs[0].data() as User;
+
+    const isValidPassword = await bcrypt.compare(password, userData.passwordHash);
+    if (!isValidPassword) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    if (req.session) {
+      req.session.username = username;
+    }
+    
+    res.status(200).json({ username });
+  } catch (error) {
+    res.status(500).json({ error: "Login failed" });
+  }
+};
+
+const logoutUser: RequestHandler = (req, res): void => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(500).json({ error: "Logout failed" });
+        return;
+      }
+      res.clearCookie('connect.sid');
+      res.status(200).json({ message: "Logged out successfully" });
+    });
+  } else {
+    res.status(200).json({ message: "Already logged out" });
+  }
+};
+
+const checkAuth: RequestHandler = (req, res, next): void => {
+  if (!req.session?.username) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+  req.headers['x-username'] = req.session.username;
+  next();
+};
+
 const addCharacter: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { name, series, imageUrl } = req.body;
@@ -55,7 +179,6 @@ const addCharacter: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-// Get characters handler (each time we load up a board)
 const getCharacters: RequestHandler = async (_req, res): Promise<void> => {
   try {
     const characterSnapshot = await db.collection("characters").get();
@@ -84,7 +207,7 @@ const createBoard: RequestHandler = async (req, res): Promise<void> => {
       characters: {},
       createdAt: new Date(),
       updatedAt: new Date(),
-      allowedUsers: []  // Initialize empty array of allowed users
+      allowedUsers: []
     };
     
     await boardRef.set(board);
@@ -95,8 +218,6 @@ const createBoard: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-
-// Add character to board handler
 const addCharacterToBoard: RequestHandler<BoardParams, any, AddCharacterRequest> = async (req, res): Promise<void> => {
   try {
     const { boardId } = req.params;
@@ -130,7 +251,6 @@ const addCharacterToBoard: RequestHandler<BoardParams, any, AddCharacterRequest>
   }
 };
 
-// Update character ranking handler
 const updateCharacterRanking: RequestHandler<CharacterParams, any, UpdateRankingRequest & { userId: string }> = async (req, res): Promise<void> => {
   try {
     const { boardId, characterId } = req.params;
@@ -172,7 +292,6 @@ const updateCharacterRanking: RequestHandler<CharacterParams, any, UpdateRanking
   }
 };
 
-// Add tag handler
 const addTag: RequestHandler<BoardParams, any, AddTagRequest> = async (req, res): Promise<void> => {
   try {
     const { boardId } = req.params;
@@ -255,19 +374,15 @@ const getBoardByAccessKey: RequestHandler = async (req, res): Promise<void> => {
     const boardRef = boardsSnapshot.docs[0].ref;
     const boardData = boardsSnapshot.docs[0].data() as TierBoard;
 
-    // Don't add the user if they're already the creator or in allowedUsers
     if (boardData.creatorUsername !== username && 
         !boardData.allowedUsers?.includes(username)) {
-      // Add the user to allowedUsers
       await boardRef.update({
         allowedUsers: admin.firestore.FieldValue.arrayUnion(username)
       });
 
-      // Update the boardData to include the new user
       boardData.allowedUsers = [...(boardData.allowedUsers || []), username];
     }
 
-    // Return the board with its ID
     const updatedBoard = {
       ...boardData,
       id: boardsSnapshot.docs[0].id
@@ -288,17 +403,14 @@ const getBoards: RequestHandler = async (req, res): Promise<void> => {
       return;
     }
 
-    // Get boards where user is creator
     const createdBoardsQuery = await db.collection("tierBoards")
       .where("creatorUsername", "==", username)
       .get();
 
-    // Get boards where user is in allowedUsers
     const sharedBoardsQuery = await db.collection("tierBoards")
       .where("allowedUsers", "array-contains", username)
       .get();
 
-    // Combine both sets of boards
     const boards = [
       ...createdBoardsQuery.docs.map(doc => ({
         id: doc.id,
@@ -317,16 +429,6 @@ const getBoards: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-app.delete("/boards/:boardId", async (req: Request<BoardParams>, res: Response): Promise<void> => {
-  try {
-    const { boardId } = req.params;
-    await db.collection("tierBoards").doc(boardId).delete();
-    res.status(200).json({ message: "Board deleted successfully" });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    res.status(500).json({ error: errorMessage });
-  }
-});
 const addUserToBoard: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { boardId } = req.params;
@@ -358,7 +460,14 @@ const addUserToBoard: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-// Route definitions
+// Auth routes (unprotected)
+app.post('/auth/register', registerUser);
+app.post('/auth/login', loginUser);
+app.post('/auth/logout', logoutUser);
+
+// Protected routes
+app.use(checkAuth);
+
 app.post("/characters", addCharacter);
 app.get("/characters", getCharacters);
 app.post("/boards", createBoard);
@@ -369,6 +478,16 @@ app.get("/boards/:boardId", getBoard);
 app.get("/boards", getBoards);
 app.get("/boards/access/:accessKey", getBoardByAccessKey);
 app.post("/boards/:boardId/users", addUserToBoard);
+app.delete("/boards/:boardId", async (req: Request<BoardParams>, res: Response): Promise<void> => {
+  try {
+    const { boardId } = req.params;
+    await db.collection("tierBoards").doc(boardId).delete();
+    res.status(200).json({ message: "Board deleted successfully" });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({ error: errorMessage });
+  }
+});
 
 const PORT = process.env.PORT || 5003;
 export const server = app.listen(PORT, () => {

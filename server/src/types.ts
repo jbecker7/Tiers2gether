@@ -36,16 +36,20 @@ export interface UserProfile {
   email: string;
   tierBoards: string[];
 }
-
-export interface CreateBoardRequest {
-  name: string;
-  initialTags?: string[];
-  creatorUsername: string;
+export interface User {
+  username: string;
+  passwordHash: string;
+  createdAt: Date;
 }
 
-export interface AddCharacterRequest {
-  boardId: string;
-  character: Omit<Character, 'id'>;
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
 }
 
 export interface UpdateRankingRequest {

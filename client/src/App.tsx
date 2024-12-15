@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import TierBoardComponent from "./TierBoard";
 import BoardManagement from "./BoardManagement";
 import { createTierBoard, getBoards, deleteBoard, updateBoard } from "./api";
+import Auth from "./Auth";
 import { TierBoard } from "./types";
 import "./App.css";
+import axios from "axios";
 
 function App() {
   const [boards, setBoards] = useState<TierBoard[]>([]);
@@ -11,9 +13,8 @@ function App() {
     return localStorage.getItem("lastSelectedBoard");
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState<string>(
-    () => localStorage.getItem("username") || ""
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
   const [showUsernameSetup, setShowUsernameSetup] = useState(
     !localStorage.getItem("username")
   );
@@ -62,12 +63,19 @@ function App() {
     localStorage.setItem("lastSelectedBoard", boardId);
   };
 
+  const handleAuthSuccess = (username: string) => {
+    setIsAuthenticated(true);
+    setUsername(username);
+  };
+
   const handleSetUsername = (newUsername: string) => {
     localStorage.setItem("username", newUsername);
     setUsername(newUsername);
     setShowUsernameSetup(false);
   };
-
+  if (!isAuthenticated) {
+    return <Auth onAuthSuccess={handleAuthSuccess} />;
+  }
   if (showUsernameSetup) {
     return (
       <div className="fixed inset-0 bg-gray-50 flex items-center justify-center p-4">
@@ -139,6 +147,23 @@ function App() {
               Change Username
             </button>
           </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-600">Logged in as: {username}</span>
+          <button
+            onClick={() => {
+              axios.post(
+                "http://localhost:5003/auth/logout",
+                {},
+                { withCredentials: true }
+              );
+              setIsAuthenticated(false);
+              setUsername("");
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Logout
+          </button>
         </div>
       </header>
 

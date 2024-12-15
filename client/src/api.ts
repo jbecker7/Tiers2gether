@@ -4,7 +4,8 @@ import {
   Character,
   CreateBoardRequest,
 } from './types';
-
+axios.defaults.withCredentials = true; 
+axios.defaults.baseURL = 'http://localhost:5003';
 const BASE_URL = 'http://localhost:5003';
 
 // Helper to get headers with username
