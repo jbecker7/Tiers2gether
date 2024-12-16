@@ -1,4 +1,3 @@
-// TierListDisplay.tsx
 import React from "react";
 import { BoardCharacter } from "./types";
 
@@ -37,98 +36,79 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
     {} as Record<string | "Unranked", (BoardCharacter & { id: string })[]>
   );
 
+  const renderCharacterCard = (
+    character: BoardCharacter & { id: string },
+    currentTier: string
+  ) => (
+    <div
+      key={character.id}
+      className="flex-shrink-0 w-28 bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+    >
+      <img
+        src={character.imageUrl}
+        alt={character.name}
+        className="w-full h-28 object-cover"
+      />
+      <div className="p-2">
+        <p className="font-bold text-sm truncate">{character.name}</p>
+        <p className="text-xs text-gray-600 truncate mb-2">
+          {character.series}
+        </p>
+        <select
+          value={currentTier === "Unranked" ? "" : currentTier}
+          onChange={(e) =>
+            onCharacterDrop(
+              character.id,
+              e.target.value as "S" | "A" | "B" | "C" | "D"
+            )
+          }
+          className="w-full text-xs border rounded py-1 px-1"
+        >
+          {currentTier === "Unranked" && (
+            <option value="" disabled>
+              Select Tier
+            </option>
+          )}
+          {TIERS.map((t) => (
+            <option key={t} value={t}>
+              {t} Tier
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="bg-[#1a1a1a] rounded-lg p-4 space-y-2 border border-[#333]">
       {/* Tier List */}
       {TIERS.map((tier) => (
-        <div key={tier} className="flex">
+        <div key={tier} className="flex h-[160px] border border-[#333]">
           <div
-            className={`w-24 flex items-center justify-center text-2xl font-bold ${TIER_COLORS[tier]} p-4`}
+            className={`w-24 flex-shrink-0 flex items-center justify-center text-3xl font-bold ${TIER_COLORS[tier]}`}
           >
             {tier}
           </div>
-          <div className="flex-1 bg-[#2D2D2D] p-4">
-            <div className="flex flex-wrap gap-4">
-              {charactersByTier[tier]?.map((character) => (
-                <div
-                  key={character.id}
-                  className="w-48 bg-white rounded-lg p-2"
-                >
-                  <img
-                    src={character.imageUrl}
-                    alt={character.name}
-                    className="w-full h-32 object-cover rounded mb-2"
-                  />
-                  <div className="text-black">
-                    <p className="font-bold truncate">{character.name}</p>
-                    <p className="text-sm text-gray-600 truncate">
-                      {character.series}
-                    </p>
-                    <select
-                      value={tier}
-                      onChange={(e) =>
-                        onCharacterDrop(
-                          character.id,
-                          e.target.value as "S" | "A" | "B" | "C" | "D"
-                        )
-                      }
-                      className="mt-2 w-full border rounded px-2 py-1"
-                    >
-                      {TIERS.map((t) => (
-                        <option key={t} value={t}>
-                          {t} Tier
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ))}
+          <div className="flex-1 bg-[#2a2a2a] p-4 overflow-x-auto">
+            <div className="flex gap-4 h-full items-center">
+              {charactersByTier[tier]?.map((character) =>
+                renderCharacterCard(character, tier)
+              )}
             </div>
           </div>
         </div>
       ))}
 
       {/* Unranked Characters */}
-      <div className="flex">
-        <div className="w-24 flex items-center justify-center text-2xl font-bold bg-gray-300 p-4">
-          Unranked
+      <div className="flex h-[160px] border border-[#333]">
+        <div className="w-24 flex-shrink-0 flex items-center justify-center text-3xl font-bold bg-gray-300">
+          New
         </div>
-        <div className="flex-1 bg-[#2D2D2D] p-4">
-          <div className="flex flex-wrap gap-4">
-            {charactersByTier["Unranked"]?.map((character) => (
-              <div key={character.id} className="w-48 bg-white rounded-lg p-2">
-                <img
-                  src={character.imageUrl}
-                  alt={character.name}
-                  className="w-full h-32 object-cover rounded mb-2"
-                />
-                <div className="text-black">
-                  <p className="font-bold truncate">{character.name}</p>
-                  <p className="text-sm text-gray-600 truncate">
-                    {character.series}
-                  </p>
-                  <select
-                    value=""
-                    onChange={(e) =>
-                      onCharacterDrop(
-                        character.id,
-                        e.target.value as "S" | "A" | "B" | "C" | "D"
-                      )
-                    }
-                    className="mt-2 w-full border rounded px-2 py-1"
-                  >
-                    <option value="" disabled>
-                      Select Tier
-                    </option>
-                    {TIERS.map((t) => (
-                      <option key={t} value={t}>
-                        {t} Tier
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ))}
+        <div className="flex-1 bg-[#2a2a2a] p-4 overflow-x-auto">
+          <div className="flex gap-4 h-full items-center">
+            {charactersByTier["Unranked"]?.map((character) =>
+              renderCharacterCard(character, "Unranked")
+            )}
           </div>
         </div>
       </div>

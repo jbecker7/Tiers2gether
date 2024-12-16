@@ -33,6 +33,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [newUser, setNewUser] = useState("");
+  const [copySuccess, setCopySuccess] = useState(false);
   const [newCharacter, setNewCharacter] = useState({
     name: "",
     series: "",
@@ -42,7 +43,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
-  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const loadBoard = async () => {
@@ -59,18 +59,15 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
     loadBoard();
   }, [boardId]);
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
-
-    const characterId = result.draggableId;
-    const newTier = result.destination.droppableId as
-      | "S"
-      | "A"
-      | "B"
-      | "C"
-      | "D";
-
-    await handleUpdateRanking(characterId, newTier);
+  const handleCopyAccessKey = async () => {
+    if (!board) return;
+    try {
+      await navigator.clipboard.writeText(board.accessKey);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy access key:", err);
+    }
   };
 
   const handleAddCharacter = async (e: React.FormEvent) => {
@@ -139,14 +136,21 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
     }
   };
 
-  const handleCopyAccessKey = async () => {
-    if (!board) return;
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!board || !newUser.trim()) return;
+
     try {
-      await navigator.clipboard.writeText(board.accessKey);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      setIsLoading(true);
+      await addUserToBoard(boardId, newUser);
+      const updatedBoard = await getTierBoard(boardId);
+      setBoard(updatedBoard);
+      setNewUser("");
+      setIsAddingUser(false);
     } catch (err) {
-      console.error("Failed to copy access key:", err);
+      console.error("Failed to add user:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -155,17 +159,6 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
-
-  const charactersByTier = Object.entries(board?.characters || {}).reduce(
-    (acc, [id, character]) => {
-      const userRanking = character.rankings.find((r) => r.userId === userId);
-      const tier = userRanking?.tier || "D";
-      if (!acc[tier]) acc[tier] = [];
-      acc[tier].push({ id, ...character });
-      return acc;
-    },
-    {} as Record<string, (Character & { id: string })[]>
-  );
 
   if (isLoading && !board) {
     return (
@@ -182,7 +175,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold text-gray-900">{board.name}</h1>
@@ -232,14 +225,9 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
             </button>
           </div>
         </div>
-        {board.allowedUsers && board.allowedUsers.length > 0 && (
-          <div className="mt-2 text-sm text-gray-500">
-            Shared with: {board.allowedUsers.join(", ")}
-          </div>
-        )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 mb-8">
+      <div className="max-w-6xl mx-auto px-4">
         <TierListDisplay
           characters={board.characters}
           userId={userId}
@@ -253,15 +241,14 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         onClose={() => setIsAddingCharacter(false)}
         className="relative z-50"
       >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6">
+        <div className="dialog-overlay">
+          <div className="dialog-content">
             <Dialog.Title className="text-xl font-bold mb-4">
               Add New Character
             </Dialog.Title>
-            <form onSubmit={handleAddCharacter} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            <form onSubmit={handleAddCharacter} className="modal-form">
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Character Name
                 </label>
                 <input
@@ -270,12 +257,13 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   onChange={(e) =>
                     setNewCharacter({ ...newCharacter, name: e.target.value })
                   }
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Series
                 </label>
                 <input
@@ -284,12 +272,13 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   onChange={(e) =>
                     setNewCharacter({ ...newCharacter, series: e.target.value })
                   }
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Image URL
                 </label>
                 <input
@@ -301,12 +290,13 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                       imageUrl: e.target.value,
                     })
                   }
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Tags
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -315,10 +305,8 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                        selectedTags.includes(tag)
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      className={`tag ${
+                        selectedTags.includes(tag) ? "selected" : ""
                       }`}
                     >
                       {tag}
@@ -326,24 +314,25 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                   ))}
                 </div>
               </div>
-              <div className="flex justify-end gap-3 mt-6">
+
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setIsAddingCharacter(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="button button-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="button button-primary"
                   disabled={isLoading}
                 >
                   {isLoading ? "Adding..." : "Add Character"}
                 </button>
               </div>
             </form>
-          </Dialog.Panel>
+          </div>
         </div>
       </Dialog>
 
@@ -353,57 +342,42 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         onClose={() => setIsAddingUser(false)}
         className="relative z-50"
       >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-sm bg-white rounded-lg p-6">
+        <div className="dialog-overlay">
+          <div className="dialog-content">
             <Dialog.Title className="text-xl font-bold mb-4">
               Add User to Board
             </Dialog.Title>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                try {
-                  await addUserToBoard(boardId, newUser);
-                  setIsAddingUser(false);
-                  setNewUser("");
-                  // Refresh board to show updated users
-                  const updatedBoard = await getTierBoard(boardId);
-                  setBoard(updatedBoard);
-                } catch (err) {
-                  console.error("Failed to add user:", err);
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            <form onSubmit={handleAddUser} className="modal-form">
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Username
                 </label>
                 <input
                   type="text"
                   value={newUser}
                   onChange={(e) => setNewUser(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   required
                 />
               </div>
-              <div className="flex justify-end gap-3">
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setIsAddingUser(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="button button-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="button button-primary"
+                  disabled={isLoading}
                 >
                   Add User
                 </button>
               </div>
             </form>
-          </Dialog.Panel>
+          </div>
         </div>
       </Dialog>
 
@@ -413,15 +387,14 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         onClose={() => setShowShareDialog(false)}
         className="relative z-50"
       >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-sm bg-white rounded-lg p-6">
+        <div className="dialog-overlay">
+          <div className="dialog-content">
             <Dialog.Title className="text-xl font-bold mb-4">
               Share Board
             </Dialog.Title>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="modal-form">
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Board Access Key
                 </label>
                 <div className="flex items-center gap-2">
@@ -429,29 +402,29 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
                     type="text"
                     value={board.accessKey}
                     readOnly
-                    className="w-full border rounded-lg px-3 py-2 bg-gray-50"
+                    className="input-field mb-0"
                   />
                   <button
                     onClick={handleCopyAccessKey}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="button button-primary whitespace-nowrap"
                   >
                     {copySuccess ? "Copied!" : "Copy"}
                   </button>
                 </div>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="text-sm text-gray-500 mt-2">
                   Share this access key with others to let them view this board
                 </p>
               </div>
-              <div className="flex justify-end">
+              <div className="modal-actions">
                 <button
                   onClick={() => setShowShareDialog(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="button button-secondary"
                 >
                   Close
                 </button>
               </div>
             </div>
-          </Dialog.Panel>
+          </div>
         </div>
       </Dialog>
 
@@ -461,43 +434,42 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
         onClose={() => setIsAddingTag(false)}
         className="relative z-50"
       >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-sm bg-white rounded-lg p-6">
+        <div className="dialog-overlay">
+          <div className="dialog-content">
             <Dialog.Title className="text-xl font-bold mb-4">
               Add New Tag
             </Dialog.Title>
-            <form onSubmit={handleAddTag} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            <form onSubmit={handleAddTag} className="modal-form">
+              <div className="modal-form-group">
+                <label className="text-sm font-medium text-gray-700">
                   Tag Name
                 </label>
                 <input
                   type="text"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   required
                 />
               </div>
-              <div className="flex justify-end gap-3">
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setIsAddingTag(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="button button-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="button button-primary"
                   disabled={isLoading || !newTag.trim()}
                 >
                   {isLoading ? "Adding..." : "Add Tag"}
                 </button>
               </div>
             </form>
-          </Dialog.Panel>
+          </div>
         </div>
       </Dialog>
     </div>
