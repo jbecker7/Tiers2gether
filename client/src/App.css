@@ -382,4 +382,69 @@ header .container {
   .modal-actions button {
     width: 100%;
   }
+
+  /* User Selection Styles */
+.tier-list-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.user-select {
+  padding: 0.5rem 2rem 0.5rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: white;
+  font-size: 1rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.5em 1.5em;
+}
+
+.user-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.viewing-other-user {
+  padding: 0.5rem 1rem;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+}
+
+/* Non-draggable character cards */
+.character-card.non-draggable {
+  cursor: default;
+  opacity: 0.9;
+  border-color: #e5e7eb;
+}
+
+.character-card.non-draggable:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-color: #e5e7eb;
+}
+
+.character-card.non-draggable .character-image:hover {
+  transform: none;
+}
+
+/* Tier content when viewing other rankings */
+.tier-content:not(.droppable) {
+  border-style: solid;
+  border-color: #e5e7eb;
+  background-color: #f8fafc;
+}
 }

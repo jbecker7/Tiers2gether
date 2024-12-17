@@ -1,5 +1,5 @@
-import React from "react";
-import { TierBoard, Character } from "./types";
+import React, { useState, useEffect } from "react";
+import { TierBoard, Character, CharacterRanking } from "./types";
 
 interface TierListDisplayProps {
   characters: TierBoard["characters"];
@@ -17,9 +17,25 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
   userId,
   onCharacterDrop,
 }) => {
+  // Get unique list of users who have made rankings
+  const [selectedUser, setSelectedUser] = useState<string>(userId);
+  const [usersWithRankings, setUsersWithRankings] = useState<string[]>([]);
+
+  useEffect(() => {
+    const users = new Set<string>();
+    Object.values(characters).forEach((character) => {
+      character.rankings.forEach((ranking) => {
+        users.add(ranking.userId);
+      });
+    });
+    setUsersWithRankings(Array.from(users));
+  }, [characters]);
+
   const charactersByTier = Object.entries(characters).reduce(
     (acc, [id, character]) => {
-      const userRanking = character.rankings.find((r) => r.userId === userId);
+      const userRanking = character.rankings.find(
+        (r) => r.userId === selectedUser
+      );
       const tier = userRanking?.tier || "D";
       if (!acc[tier]) acc[tier] = [];
       acc[tier].push({ id, ...character });
@@ -28,12 +44,17 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
     {} as Record<string, (Character & { id: string })[]>
   );
 
+  const isViewingOwnRankings = selectedUser === userId;
+
   const renderCharacterCard = (character: Character & { id: string }) => (
     <div
       key={character.id}
-      className="character-card"
-      draggable
+      className={`character-card ${
+        !isViewingOwnRankings ? "non-draggable" : ""
+      }`}
+      draggable={isViewingOwnRankings}
       onDragStart={(e) => {
+        if (!isViewingOwnRankings) return;
         e.dataTransfer.setData("characterId", character.id);
         e.currentTarget.classList.add("is-dragging");
       }}
@@ -68,12 +89,33 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
 
   return (
     <div className="tier-list">
+      <div className="tier-list-header">
+        <select
+          value={selectedUser}
+          onChange={(e) => setSelectedUser(e.target.value)}
+          className="user-select"
+        >
+          {usersWithRankings.map((user) => (
+            <option key={user} value={user}>
+              {user === userId ? "Your Rankings" : `${user}'s Rankings`}
+            </option>
+          ))}
+        </select>
+        {!isViewingOwnRankings && (
+          <div className="viewing-other-user">
+            Viewing {selectedUser}'s rankings (read-only)
+          </div>
+        )}
+      </div>
       {TIERS.map((tier) => (
         <div key={tier} className="tier-row">
           <div className={`tier-label tier-${tier}`}>{tier}</div>
           <div
-            className="tier-content"
+            className={`tier-content ${
+              isViewingOwnRankings ? "droppable" : ""
+            }`}
             onDragOver={(e) => {
+              if (!isViewingOwnRankings) return;
               e.preventDefault();
               e.currentTarget.classList.add("can-drop");
             }}
@@ -81,6 +123,7 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
               e.currentTarget.classList.remove("can-drop");
             }}
             onDrop={(e) => {
+              if (!isViewingOwnRankings) return;
               e.preventDefault();
               e.currentTarget.classList.remove("can-drop");
               const characterId = e.dataTransfer.getData("characterId");
