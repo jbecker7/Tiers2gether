@@ -5,6 +5,7 @@ import { getBoardByAccessKey } from "./api";
 interface BoardManagementProps {
   boards: TierBoard[];
   currentBoardId: string;
+  username: string;
   onBoardChange: (boardId: string) => void;
   onCreateBoard: (name: string) => Promise<void>;
   onDeleteBoard: (boardId: string) => Promise<void>;
@@ -14,6 +15,7 @@ interface BoardManagementProps {
 const BoardManagement: React.FC<BoardManagementProps> = ({
   boards,
   currentBoardId,
+  username,
   onBoardChange,
   onCreateBoard,
   onDeleteBoard,
@@ -157,8 +159,7 @@ const BoardManagement: React.FC<BoardManagementProps> = ({
                       Select
                     </button>
                     {boards.length > 1 &&
-                      board.creatorUsername ===
-                        localStorage.getItem("username") && (
+                      board.creatorUsername === username && (
                         <button
                           onClick={() => onDeleteBoard(board.id)}
                           className="text-sm px-3 py-1 text-red-600 hover:bg-red-50 rounded"

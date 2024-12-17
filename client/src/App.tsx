@@ -13,11 +13,24 @@ function App() {
     return localStorage.getItem("lastSelectedBoard");
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState("");
-  const [showUsernameSetup, setShowUsernameSetup] = useState(
-    !localStorage.getItem("username")
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return !!document.cookie.includes("connect.sid");
+  });
+  const [username, setUsername] = useState<string>("");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      axios
+        .get("http://localhost:5003/auth/me", { withCredentials: true })
+        .then((response) => {
+          setUsername(response.data.username);
+        })
+        .catch(() => {
+          setIsAuthenticated(false);
+          setUsername("");
+        });
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const initializeBoards = async () => {
@@ -58,68 +71,34 @@ function App() {
     initializeBoards();
   }, [username]);
 
-  const handleBoardChange = (boardId: string) => {
-    setCurrentBoardId(boardId);
-    localStorage.setItem("lastSelectedBoard", boardId);
-  };
-
   const handleAuthSuccess = (username: string) => {
     setIsAuthenticated(true);
     setUsername(username);
   };
 
-  const handleSetUsername = (newUsername: string) => {
-    localStorage.setItem("username", newUsername);
-    setUsername(newUsername);
-    setShowUsernameSetup(false);
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:5003/auth/logout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      setIsAuthenticated(false);
+      setUsername("");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
+
+  const handleBoardChange = (boardId: string) => {
+    setCurrentBoardId(boardId);
+    localStorage.setItem("lastSelectedBoard", boardId);
+  };
+
   if (!isAuthenticated) {
     return <Auth onAuthSuccess={handleAuthSuccess} />;
-  }
-  if (showUsernameSetup) {
-    return (
-      <div className="fixed inset-0 bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
-          <h2 className="text-xl font-bold mb-4">Choose Your Username</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const input = e.currentTarget.elements.namedItem(
-                "username"
-              ) as HTMLInputElement;
-              if (input.value.trim().length >= 3) {
-                handleSetUsername(input.value.trim());
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                minLength={3}
-                required
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter username (minimum 3 characters)"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Set Username
-            </button>
-          </form>
-        </div>
-      </div>
-    );
   }
 
   if (isLoading) {
@@ -138,32 +117,12 @@ function App() {
           <div className="flex items-center gap-4">
             <span className="text-gray-600">Logged in as: {username}</span>
             <button
-              onClick={() => {
-                localStorage.removeItem("username");
-                setShowUsernameSetup(true);
-              }}
+              onClick={handleLogout}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
-              Change Username
+              Logout
             </button>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">Logged in as: {username}</span>
-          <button
-            onClick={() => {
-              axios.post(
-                "http://localhost:5003/auth/logout",
-                {},
-                { withCredentials: true }
-              );
-              setIsAuthenticated(false);
-              setUsername("");
-            }}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            Logout
-          </button>
         </div>
       </header>
 
@@ -172,6 +131,7 @@ function App() {
           <BoardManagement
             boards={boards}
             currentBoardId={currentBoardId || ""}
+            username={username}
             onBoardChange={handleBoardChange}
             onCreateBoard={async (name) => {
               const newBoard = await createTierBoard({

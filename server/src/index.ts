@@ -467,6 +467,13 @@ app.post('/auth/logout', logoutUser);
 
 // Protected routes
 app.use(checkAuth);
+app.get('/auth/me', (req, res) => {
+  if (!req.session?.username) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+  res.json({ username: req.session.username });
+});
 
 app.post("/characters", addCharacter);
 app.get("/characters", getCharacters);
