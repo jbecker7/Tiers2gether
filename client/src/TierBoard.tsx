@@ -184,7 +184,8 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
               </span>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              Current Tags: {board.tagList.map((tag) => (
+              Current Tags:{" "}
+              {board.tagList.map((tag) => (
                 <span
                   key={tag}
                   className="px-3 py-1 bg-gray-200 rounded-full text-sm text-gray-700"
@@ -217,11 +218,11 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
             </button>
             <button
               onClick={() => setIsAddingCharacter(true)}
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
               disabled={isLoading}
             >
-              <Plus size={20} />
-              Add Character
+              <Plus size={13} /> {/* Adjust the size here */}
+              <span className="ml-2">Add Character</span>
             </button>
           </div>
         </div>
