@@ -184,12 +184,12 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
               </span>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {board.tagList.map((tag) => (
+              Current Tags: {board.tagList.map((tag) => (
                 <span
                   key={tag}
                   className="px-3 py-1 bg-gray-200 rounded-full text-sm text-gray-700"
                 >
-                  {tag}
+                  {tag + " "}
                 </span>
               ))}
               <button
