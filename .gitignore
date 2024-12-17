@@ -129,5 +129,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 server/src/firebase/serviceAccountKey.json
-package-lock.json
-package.json
+
