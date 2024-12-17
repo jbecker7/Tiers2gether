@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import TierBoardComponent from "./TierBoard";
 import BoardManagement from "./BoardManagement";
 import { createTierBoard, getBoards, deleteBoard, updateBoard } from "./api";
+import Auth from "./Auth";
 import { TierBoard } from "./types";
 import "./App.css";
+import axios from "axios";
 
 function App() {
   const [boards, setBoards] = useState<TierBoard[]>([]);
@@ -11,10 +13,29 @@ function App() {
     return localStorage.getItem("lastSelectedBoard");
   });
   const [isLoading, setIsLoading] = useState(true);
-  const mockUserId = "user123";
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return !!document.cookie.includes("connect.sid");
+  });
+  const [username, setUsername] = useState<string>("");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      axios
+        .get("http://localhost:5003/auth/me", { withCredentials: true })
+        .then((response) => {
+          setUsername(response.data.username);
+        })
+        .catch(() => {
+          setIsAuthenticated(false);
+          setUsername("");
+        });
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const initializeBoards = async () => {
+      if (!username) return;
+
       try {
         setIsLoading(true);
         const existingBoards = await getBoards();
@@ -34,6 +55,7 @@ function App() {
           const newBoard = await createTierBoard({
             name: "Default Tier Board",
             initialTags: ["tv", "anime"],
+            creatorUsername: username,
           });
           setBoards([newBoard]);
           setCurrentBoardId(newBoard.id);
@@ -47,12 +69,37 @@ function App() {
     };
 
     initializeBoards();
-  }, []);
+  }, [username]);
+
+  const handleAuthSuccess = (username: string) => {
+    setIsAuthenticated(true);
+    setUsername(username);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:5003/auth/logout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      setIsAuthenticated(false);
+      setUsername("");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const handleBoardChange = (boardId: string) => {
     setCurrentBoardId(boardId);
     localStorage.setItem("lastSelectedBoard", boardId);
   };
+
+  if (!isAuthenticated) {
+    return <Auth onAuthSuccess={handleAuthSuccess} />;
+  }
 
   if (isLoading) {
     return (
@@ -64,14 +111,35 @@ function App() {
 
   return (
     <div className="app-root">
+      <header className="bg-white shadow-sm mb-6">
+        <div className="container mx-auto flex flex-col items-center px-4 py-4">
+          <h1 className="text-4xl font-bold mb-2">Tiers2gether</h1>
+          <div className="flex items-center gap-2">
+            <span>Logged in as: {username}</span>
+            <br></br>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
       <div className="app-content">
         <div className="board-section">
           <BoardManagement
             boards={boards}
             currentBoardId={currentBoardId || ""}
+            username={username}
             onBoardChange={handleBoardChange}
             onCreateBoard={async (name) => {
-              const newBoard = await createTierBoard({ name, initialTags: [] });
+              const newBoard = await createTierBoard({
+                name,
+                initialTags: [],
+                creatorUsername: username,
+              });
               setBoards((prev) => [...prev, newBoard]);
               setCurrentBoardId(newBoard.id);
               localStorage.setItem("lastSelectedBoard", newBoard.id);
@@ -103,7 +171,7 @@ function App() {
             <TierBoardComponent
               key={currentBoardId}
               boardId={currentBoardId}
-              userId={mockUserId}
+              userId={username}
             />
           </div>
         )}

@@ -1,20 +1,7 @@
-import type { 
-  DroppableProvided, 
-  DroppableStateSnapshot,
-  DraggableProvided,
-  DraggableStateSnapshot,
-  DropResult 
-} from 'react-beautiful-dnd';
-
-export interface DndProvided {
-  droppable: {
-    provided: DroppableProvided;
-    snapshot: DroppableStateSnapshot;
-  };
-  draggable: {
-    provided: DraggableProvided;
-    snapshot: DraggableStateSnapshot;
-  };
+export interface CharacterRanking {
+  userId: string;
+  tier: 'S' | 'A' | 'B' | 'C' | 'D';
+  timestamp: Date;
 }
 
 export interface Character {
@@ -22,22 +9,14 @@ export interface Character {
   name: string;
   series: string;
   imageUrl: string;
+  rankings: CharacterRanking[];
   tags: string[];
 }
 
-// Individual ranking by a user
-export interface CharacterRanking {
-  userId: string;
-  tier: 'S' | 'A' | 'B' | 'C' | 'D';
-  timestamp: Date;
-}
-
-// Character with its rankings in a specific board
 export interface BoardCharacter extends Character {
   rankings: CharacterRanking[];
 }
 
-// Structure for a tier board
 export interface TierBoard {
   id: string;
   name: string;
@@ -47,24 +26,30 @@ export interface TierBoard {
   };
   createdAt: Date;
   updatedAt: Date;
+  creatorUsername: string;
+  accessKey: string;
+  allowedUsers: string[];
 }
 
-// User profile structure
 export interface UserProfile {
   userId: string;
   email: string;
-  tierBoards: string[]; // Array of board IDs the user is part of
+  tierBoards: string[];
+}
+export interface User {
+  username: string;
+  passwordHash: string;
+  createdAt: Date;
 }
 
-// Request types for API endpoints
-export interface CreateBoardRequest {
-  name: string;
-  initialTags?: string[];
+export interface LoginRequest {
+  username: string;
+  password: string;
 }
 
-export interface AddCharacterRequest {
-  boardId: string;
-  character: Omit<Character, 'id'>;
+export interface RegisterRequest {
+  username: string;
+  password: string;
 }
 
 export interface UpdateRankingRequest {
@@ -76,4 +61,14 @@ export interface UpdateRankingRequest {
 export interface AddTagRequest {
   boardId: string;
   tag: string;
+}
+
+export interface CreateBoardRequest {
+  name: string;
+  initialTags?: string[];
+  creatorUsername: string;
+}
+
+export interface AddUserToBoardRequest {
+  username: string;
 }
