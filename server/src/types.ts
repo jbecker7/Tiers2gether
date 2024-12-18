@@ -1,6 +1,6 @@
 export interface CharacterRanking {
   userId: string;
-  tier: 'S' | 'A' | 'B' | 'C' | 'D';
+  tier: "S" | "A" | "B" | "C" | "D";
   timestamp: Date;
 }
 
@@ -55,7 +55,7 @@ export interface RegisterRequest {
 export interface UpdateRankingRequest {
   boardId: string;
   characterId: string;
-  tier: 'S' | 'A' | 'B' | 'C' | 'D';
+  tier: "S" | "A" | "B" | "C" | "D";
 }
 
 export interface AddTagRequest {

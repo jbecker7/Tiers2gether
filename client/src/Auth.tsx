@@ -27,7 +27,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         },
         {
           withCredentials: true, // Important for cookies
-        }
+        },
       );
 
       onAuthSuccess(response.data.username);

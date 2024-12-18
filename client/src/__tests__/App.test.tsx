@@ -43,7 +43,7 @@ describe("App", () => {
     test("shows login screen when not authenticated", () => {
       render(<App />);
       expect(
-        screen.getByRole("heading", { name: /login/i })
+        screen.getByRole("heading", { name: /login/i }),
       ).toBeInTheDocument();
     });
 
@@ -72,11 +72,11 @@ describe("App", () => {
 
       await userEvent.type(
         screen.getByPlaceholderText(/enter username/i),
-        mockCredentials.username
+        mockCredentials.username,
       );
       await userEvent.type(
         screen.getByPlaceholderText(/enter password/i),
-        mockCredentials.password
+        mockCredentials.password,
       );
 
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -95,11 +95,11 @@ describe("App", () => {
 
       await userEvent.type(
         screen.getByPlaceholderText(/enter username/i),
-        mockCredentials.username
+        mockCredentials.username,
       );
       await userEvent.type(
         screen.getByPlaceholderText(/enter password/i),
-        mockCredentials.password
+        mockCredentials.password,
       );
 
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -134,7 +134,7 @@ describe("App", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /login/i })
+          screen.getByRole("heading", { name: /login/i }),
         ).toBeInTheDocument();
       });
     });
@@ -189,7 +189,7 @@ describe("App", () => {
               "Content-Type": "application/json",
               "X-Username": "",
             },
-          }
+          },
         );
       });
     });
@@ -211,13 +211,13 @@ describe("App", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText(/new board name/i)
+          screen.getByPlaceholderText(/new board name/i),
         ).toBeInTheDocument();
       });
 
       await userEvent.type(
         screen.getByPlaceholderText(/new board name/i),
-        "New Board"
+        "New Board",
       );
       fireEvent.click(screen.getByText(/create board/i));
 
@@ -258,7 +258,7 @@ describe("App", () => {
               "Content-Type": "application/json",
               "X-Username": "",
             },
-          }
+          },
         );
       });
     });
@@ -272,7 +272,7 @@ describe("App", () => {
       });
 
       mockedAxios.get.mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100))
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
 
       render(<App />);

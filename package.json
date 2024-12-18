@@ -1,2 +1,11 @@
-{"scripts":{"dev":"concurrently \"npm start --prefix client\" \"npm run dev --prefix server\""},"devDependencies":{"@babel/preset-env":"^7.26.0","@babel/preset-react":"^7.26.3","@babel/preset-typescript":"^7.26.0","concurrently":"^9.1.0"}}
-
+{
+  "scripts": {
+    "dev": "concurrently \"npm start --prefix client\" \"npm run dev --prefix server\""
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.26.0",
+    "concurrently": "^9.1.0"
+  }
+}

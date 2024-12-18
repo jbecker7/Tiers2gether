@@ -44,7 +44,7 @@ function App() {
           setBoards(existingBoards);
           const savedBoardId = localStorage.getItem("lastSelectedBoard");
           const savedBoardExists = existingBoards.some(
-            (board) => board.id === savedBoardId
+            (board) => board.id === savedBoardId,
           );
 
           if (!savedBoardId || !savedBoardExists) {
@@ -83,7 +83,7 @@ function App() {
         {},
         {
           withCredentials: true,
-        }
+        },
       );
       setIsAuthenticated(false);
       setUsername("");
@@ -159,8 +159,8 @@ function App() {
               await updateBoard(boardId, { name });
               setBoards((prev) =>
                 prev.map((board) =>
-                  board.id === boardId ? { ...board, name } : board
-                )
+                  board.id === boardId ? { ...board, name } : board,
+                ),
               );
             }}
           />

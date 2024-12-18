@@ -26,7 +26,7 @@ const EnterCharacter: React.FC = () => {
       series,
       imageUrl,
       tags,
-      rankings: []  // Initialize empty rankings array
+      rankings: [], // Initialize empty rankings array
     };
     const savedCharacter: Character = await addCharacter(newCharacter);
     setCharacters([...characters, savedCharacter]);

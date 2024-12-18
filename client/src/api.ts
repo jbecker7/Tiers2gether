@@ -1,19 +1,15 @@
-import axios, { AxiosError } from 'axios';
-import {
-  TierBoard,
-  Character,
-  CreateBoardRequest,
-} from './types';
-axios.defaults.withCredentials = true; 
-axios.defaults.baseURL = 'http://localhost:5003';
-const BASE_URL = 'http://localhost:5003';
+import axios, { AxiosError } from "axios";
+import { TierBoard, Character, CreateBoardRequest } from "./types";
+axios.defaults.withCredentials = true;
+axios.defaults.baseURL = "http://localhost:5003";
+const BASE_URL = "http://localhost:5003";
 
 // Helper to get headers with username
 const getHeaders = () => {
-  const username = localStorage.getItem('username');
+  const username = localStorage.getItem("username");
   return {
-    'Content-Type': 'application/json',
-    'X-Username': username || ''
+    "Content-Type": "application/json",
+    "X-Username": username || "",
   };
 };
 
@@ -21,9 +17,13 @@ const handleApiError = (error: unknown) => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError;
     if (axiosError.response) {
-      throw new Error(`API Error: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
+      throw new Error(
+        `API Error: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`,
+      );
     } else if (axiosError.request) {
-      throw new Error('No response received from server. Please check if the server is running.');
+      throw new Error(
+        "No response received from server. Please check if the server is running.",
+      );
     }
   }
   throw error;
@@ -31,7 +31,9 @@ const handleApiError = (error: unknown) => {
 
 export const fetchCharacters = async (): Promise<Character[]> => {
   try {
-    const response = await axios.get(`${BASE_URL}/characters`, { headers: getHeaders() });
+    const response = await axios.get(`${BASE_URL}/characters`, {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -46,7 +48,9 @@ export const addCharacter = async (characterData: {
   tags: string[];
 }): Promise<Character> => {
   try {
-    const response = await axios.post(`${BASE_URL}/characters`, characterData, { headers: getHeaders() });
+    const response = await axios.post(`${BASE_URL}/characters`, characterData, {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -54,9 +58,13 @@ export const addCharacter = async (characterData: {
   }
 };
 
-export const createTierBoard = async (data: CreateBoardRequest): Promise<TierBoard> => {
+export const createTierBoard = async (
+  data: CreateBoardRequest,
+): Promise<TierBoard> => {
   try {
-    const response = await axios.post(`${BASE_URL}/boards`, data, { headers: getHeaders() });
+    const response = await axios.post(`${BASE_URL}/boards`, data, {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -66,7 +74,9 @@ export const createTierBoard = async (data: CreateBoardRequest): Promise<TierBoa
 
 export const getTierBoard = async (boardId: string): Promise<TierBoard> => {
   try {
-    const response = await axios.get(`${BASE_URL}/boards/${boardId}`, { headers: getHeaders() });
+    const response = await axios.get(`${BASE_URL}/boards/${boardId}`, {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -76,7 +86,7 @@ export const getTierBoard = async (boardId: string): Promise<TierBoard> => {
 
 export const addCharacterToBoard = async (
   boardId: string,
-  character: Omit<Character, 'id'>
+  character: Omit<Character, "id">,
 ): Promise<Character> => {
   try {
     const response = await axios.post(
@@ -84,14 +94,14 @@ export const addCharacterToBoard = async (
       {
         character: {
           ...character,
-          rankings: []
-        }
+          rankings: [],
+        },
       },
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
     return response.data;
   } catch (error) {
-    console.error('Error adding character to board:', error);
+    console.error("Error adding character to board:", error);
     throw error;
   }
 };
@@ -99,17 +109,17 @@ export const addCharacterToBoard = async (
 export const updateCharacterRanking = async (
   boardId: string,
   characterId: string,
-  tier: 'S' | 'A' | 'B' | 'C' | 'D',
-  userId: string
+  tier: "S" | "A" | "B" | "C" | "D",
+  userId: string,
 ): Promise<Character> => {
   try {
     const response = await axios.post(
       `${BASE_URL}/boards/${boardId}/characters/${characterId}/ranking`,
       {
         tier,
-        userId
+        userId,
       },
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
     return response.data;
   } catch (error) {
@@ -118,12 +128,15 @@ export const updateCharacterRanking = async (
   }
 };
 
-export const addTagToBoard = async (boardId: string, tag: string): Promise<{ tagList: string[] }> => {
+export const addTagToBoard = async (
+  boardId: string,
+  tag: string,
+): Promise<{ tagList: string[] }> => {
   try {
     const response = await axios.post(
       `${BASE_URL}/boards/${boardId}/tags`,
       { tag },
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
     return response.data;
   } catch (error) {
@@ -134,56 +147,71 @@ export const addTagToBoard = async (boardId: string, tag: string): Promise<{ tag
 
 export const getBoards = async (): Promise<TierBoard[]> => {
   try {
-    const response = await axios.get(`${BASE_URL}/boards`, { headers: getHeaders() });
+    const response = await axios.get(`${BASE_URL}/boards`, {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
-    console.error('Error fetching boards:', error);
+    console.error("Error fetching boards:", error);
     throw error;
   }
 };
 
 export const deleteBoard = async (boardId: string): Promise<void> => {
   try {
-    await axios.delete(`${BASE_URL}/boards/${boardId}`, { headers: getHeaders() });
+    await axios.delete(`${BASE_URL}/boards/${boardId}`, {
+      headers: getHeaders(),
+    });
   } catch (error) {
-    console.error('Error deleting board:', error);
+    console.error("Error deleting board:", error);
     throw error;
   }
 };
 
-export const updateBoard = async (boardId: string, updates: { name: string }): Promise<TierBoard> => {
+export const updateBoard = async (
+  boardId: string,
+  updates: { name: string },
+): Promise<TierBoard> => {
   try {
-    const response = await axios.patch(`${BASE_URL}/boards/${boardId}`, updates, { headers: getHeaders() });
+    const response = await axios.patch(
+      `${BASE_URL}/boards/${boardId}`,
+      updates,
+      { headers: getHeaders() },
+    );
     return response.data;
   } catch (error) {
-    console.error('Error updating board:', error);
+    console.error("Error updating board:", error);
     throw error;
   }
 };
 
 // New functions for board access
-export const addUserToBoard = async (boardId: string, username: string): Promise<void> => {
+export const addUserToBoard = async (
+  boardId: string,
+  username: string,
+): Promise<void> => {
   try {
     await axios.post(
       `${BASE_URL}/boards/${boardId}/users`,
       { username },
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
   } catch (error) {
-    console.error('Error adding user to board:', error);
+    console.error("Error adding user to board:", error);
     throw error;
   }
 };
 
-export const getBoardByAccessKey = async (accessKey: string): Promise<TierBoard> => {
+export const getBoardByAccessKey = async (
+  accessKey: string,
+): Promise<TierBoard> => {
   try {
-    const response = await axios.get(
-      `${BASE_URL}/boards/access/${accessKey}`,
-      { headers: getHeaders() }
-    );
+    const response = await axios.get(`${BASE_URL}/boards/access/${accessKey}`, {
+      headers: getHeaders(),
+    });
     return response.data;
   } catch (error) {
-    console.error('Error fetching board by access key:', error);
+    console.error("Error fetching board by access key:", error);
     throw error;
   }
 };

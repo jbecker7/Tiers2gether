@@ -103,7 +103,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
 
   const handleUpdateRanking = async (
     characterId: string,
-    tier: "S" | "A" | "B" | "C" | "D"
+    tier: "S" | "A" | "B" | "C" | "D",
   ) => {
     if (!board) return;
     try {
@@ -156,7 +156,7 @@ const TierBoardComponent: React.FC<TierBoardProps> = ({ boardId, userId }) => {
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
 

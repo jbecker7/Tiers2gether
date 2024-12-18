@@ -1,13 +1,12 @@
 {
-    "indexes": [
-      {
-        "collectionGroup": "tierBoards",
-        "queryScope": "COLLECTION",
-        "fields": [
-          { "fieldPath": "allowedUsers", "arrayConfig": "CONTAINS" },
-          { "fieldPath": "createdAt", "order": "DESC" }
-        ]
-      }
-    ]
-  }
-  
+  "indexes": [
+    {
+      "collectionGroup": "tierBoards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "allowedUsers", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt", "order": "DESC" }
+      ]
+    }
+  ]
+}

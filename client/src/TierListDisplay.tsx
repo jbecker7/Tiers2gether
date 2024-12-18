@@ -6,7 +6,7 @@ interface TierListDisplayProps {
   userId: string;
   onCharacterDrop: (
     characterId: string,
-    tier: "S" | "A" | "B" | "C" | "D"
+    tier: "S" | "A" | "B" | "C" | "D",
   ) => void;
 }
 
@@ -34,14 +34,14 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
   const charactersByTier = Object.entries(characters).reduce(
     (acc, [id, character]) => {
       const userRanking = character.rankings.find(
-        (r) => r.userId === selectedUser
+        (r) => r.userId === selectedUser,
       );
       const tier = userRanking?.tier || "D";
       if (!acc[tier]) acc[tier] = [];
       acc[tier].push({ id, ...character });
       return acc;
     },
-    {} as Record<string, (Character & { id: string })[]>
+    {} as Record<string, (Character & { id: string })[]>,
   );
 
   const isViewingOwnRankings = selectedUser === userId;
@@ -134,7 +134,7 @@ const TierListDisplay: React.FC<TierListDisplayProps> = ({
           >
             <div className="character-grid">
               {charactersByTier[tier]?.map((character) =>
-                renderCharacterCard(character)
+                renderCharacterCard(character),
               )}
             </div>
           </div>
