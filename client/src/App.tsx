@@ -14,7 +14,7 @@ function App() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return !!document.cookie.includes("connect.sid");
+    return !!localStorage.getItem("authUser");
   });
   const [username, setUsername] = useState<string>("");
 
@@ -44,7 +44,7 @@ function App() {
           setBoards(existingBoards);
           const savedBoardId = localStorage.getItem("lastSelectedBoard");
           const savedBoardExists = existingBoards.some(
-            (board) => board.id === savedBoardId,
+            (board) => board.id === savedBoardId
           );
 
           if (!savedBoardId || !savedBoardExists) {
@@ -74,6 +74,7 @@ function App() {
   const handleAuthSuccess = (username: string) => {
     setIsAuthenticated(true);
     setUsername(username);
+    localStorage.setItem("authUser", username);
   };
 
   const handleLogout = async () => {
@@ -83,10 +84,12 @@ function App() {
         {},
         {
           withCredentials: true,
-        },
+        }
       );
       setIsAuthenticated(false);
       setUsername("");
+      localStorage.removeItem("authUser");
+      localStorage.removeItem("lastSelectedBoard");
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -112,14 +115,14 @@ function App() {
   return (
     <div className="app-root">
       <header className="bg-white shadow-sm mb-6">
-        <div className="container mx-auto flex flex-col items-center px-4 py-4">
-          <h1 className="text-4xl font-bold mb-2">Tiers2gether</h1>
-          <div className="flex items-center gap-2">
-            <span>Logged in as: {username}</span>
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <img src="/logo.png" alt="Tiers2gether" className="w-8 h-8" />
+          <div className="flex items-center gap-3 text-sm sm:text-base">
+            <span className="text-gray-600">Logged in as: {username}</span>
             <br></br>
             <button
               onClick={handleLogout}
-              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
             >
               Logout
             </button>
@@ -159,8 +162,8 @@ function App() {
               await updateBoard(boardId, { name });
               setBoards((prev) =>
                 prev.map((board) =>
-                  board.id === boardId ? { ...board, name } : board,
-                ),
+                  board.id === boardId ? { ...board, name } : board
+                )
               );
             }}
           />
