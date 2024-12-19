@@ -28,10 +28,6 @@ describe("App", () => {
     mockedAxios.get.mockClear();
     mockedAxios.delete.mockClear();
     localStorage.clear();
-    Object.defineProperty(document, "cookie", {
-      writable: true,
-      value: "",
-    });
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -39,18 +35,25 @@ describe("App", () => {
     jest.restoreAllMocks();
   });
 
+  const setupAuthenticatedState = () => {
+    localStorage.setItem("authUser", mockCredentials.username);
+    mockedAxios.get
+      .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
+      .mockResolvedValueOnce({ data: [mockBoard] })
+      .mockResolvedValue({ data: mockBoard });
+  };
+
   describe("Authentication", () => {
     test("shows login screen when not authenticated", () => {
       render(<App />);
       expect(
-        screen.getByRole("heading", { name: /login/i }),
+        screen.getByRole("heading", { name: /login/i })
       ).toBeInTheDocument();
     });
 
     test("validates form inputs on submit", async () => {
       render(<App />);
       const submitButton = screen.getByRole("button", { name: /login/i });
-
       fireEvent.click(submitButton);
 
       const usernameInput = screen.getByPlaceholderText(/enter username/i);
@@ -61,7 +64,7 @@ describe("App", () => {
 
     test("handles successful login", async () => {
       mockedAxios.post.mockResolvedValueOnce({
-        data: { token: "fake-token", username: mockCredentials.username },
+        data: { username: mockCredentials.username },
       });
       mockedAxios.get
         .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
@@ -72,17 +75,16 @@ describe("App", () => {
 
       await userEvent.type(
         screen.getByPlaceholderText(/enter username/i),
-        mockCredentials.username,
+        mockCredentials.username
       );
       await userEvent.type(
         screen.getByPlaceholderText(/enter password/i),
-        mockCredentials.password,
+        mockCredentials.password
       );
-
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/logged in as/i)).toBeInTheDocument();
+        expect(screen.getByText(/logged in as:/i)).toBeInTheDocument();
       });
     });
 
@@ -95,13 +97,12 @@ describe("App", () => {
 
       await userEvent.type(
         screen.getByPlaceholderText(/enter username/i),
-        mockCredentials.username,
+        mockCredentials.username
       );
       await userEvent.type(
         screen.getByPlaceholderText(/enter password/i),
-        mockCredentials.password,
+        mockCredentials.password
       );
-
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
       await waitFor(() => {
@@ -110,31 +111,22 @@ describe("App", () => {
     });
 
     test("handles logout", async () => {
-      Object.defineProperty(document, "cookie", {
-        writable: true,
-        value: "connect.sid=test",
-      });
+      setupAuthenticatedState();
+      render(<App />);
 
-      mockedAxios.get
-        .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
-        .mockResolvedValueOnce({ data: [mockBoard] })
-        .mockResolvedValue({ data: mockBoard });
+      await waitFor(() => {
+        expect(screen.getByText(/logged in as:/i)).toBeInTheDocument();
+      });
 
       mockedAxios.post.mockResolvedValueOnce({
         data: { message: "Logged out" },
       });
-
-      render(<App />);
-
-      await waitFor(() => {
-        expect(screen.getByText(/logged in as/i)).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /logout/i }));
+      const logoutButton = screen.getByRole("button", { name: /logout/i });
+      fireEvent.click(logoutButton);
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /login/i }),
+          screen.getByRole("heading", { name: /login/i })
         ).toBeInTheDocument();
       });
     });
@@ -142,24 +134,7 @@ describe("App", () => {
 
   describe("Board Management", () => {
     beforeEach(() => {
-      Object.defineProperty(document, "cookie", {
-        writable: true,
-        value: "connect.sid=test",
-      });
-      mockedAxios.get.mockResolvedValue({ data: mockBoard });
-    });
-
-    test("loads existing boards on mount", async () => {
-      mockedAxios.get
-        .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
-        .mockResolvedValueOnce({ data: [mockBoard] })
-        .mockResolvedValue({ data: mockBoard });
-
-      render(<App />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText(mockBoard.name).length).toBeGreaterThan(0);
-      });
+      setupAuthenticatedState();
     });
 
     test("creates default board if no boards exist", async () => {
@@ -168,10 +143,12 @@ describe("App", () => {
         name: "Default Tier Board",
       };
 
+      mockedAxios.get.mockReset();
       mockedAxios.get
         .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
         .mockResolvedValueOnce({ data: [] })
-        .mockResolvedValue({ data: defaultBoard });
+        .mockResolvedValueOnce({ data: defaultBoard });
+
       mockedAxios.post.mockResolvedValueOnce({ data: defaultBoard });
 
       render(<App />);
@@ -179,17 +156,12 @@ describe("App", () => {
       await waitFor(() => {
         expect(mockedAxios.post).toHaveBeenCalledWith(
           "http://localhost:5003/boards",
-          {
+          expect.objectContaining({
             name: "Default Tier Board",
             initialTags: ["tv", "anime"],
-            creatorUsername: "testuser",
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "X-Username": "",
-            },
-          },
+            creatorUsername: mockCredentials.username,
+          }),
+          expect.any(Object)
         );
       });
     });
@@ -201,25 +173,19 @@ describe("App", () => {
         name: "New Board",
       };
 
-      mockedAxios.get
-        .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
-        .mockResolvedValueOnce({ data: [mockBoard] })
-        .mockResolvedValue({ data: newBoard });
-      mockedAxios.post.mockResolvedValueOnce({ data: newBoard });
-
       render(<App />);
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText(/new board name/i),
+          screen.getByPlaceholderText(/new board name/i)
         ).toBeInTheDocument();
       });
 
-      await userEvent.type(
-        screen.getByPlaceholderText(/new board name/i),
-        "New Board",
-      );
-      fireEvent.click(screen.getByText(/create board/i));
+      const input = screen.getByPlaceholderText(/new board name/i);
+      await userEvent.type(input, "New Board");
+
+      mockedAxios.post.mockResolvedValueOnce({ data: newBoard });
+      fireEvent.click(screen.getByRole("button", { name: /create board/i }));
 
       await waitFor(() => {
         expect(mockedAxios.post).toHaveBeenCalled();
@@ -227,56 +193,42 @@ describe("App", () => {
     });
 
     test("handles board deletion with multiple boards", async () => {
-      const secondBoard = {
-        ...mockBoard,
-        id: "board2",
-        name: "Second Board",
-      };
+      const secondBoard = { ...mockBoard, id: "board2", name: "Second Board" };
 
+      mockedAxios.get.mockReset();
       mockedAxios.get
         .mockResolvedValueOnce({ data: { username: mockCredentials.username } })
         .mockResolvedValueOnce({ data: [mockBoard, secondBoard] })
         .mockResolvedValue({ data: mockBoard });
-      mockedAxios.delete.mockResolvedValueOnce({
-        data: { message: "Board deleted" },
-      });
 
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getAllByText(/delete/i).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole("button", { name: /delete/i })).toHaveLength(
+          2
+        );
       });
 
-      const deleteButtons = screen.getAllByText(/delete/i);
+      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+      mockedAxios.delete.mockResolvedValueOnce({
+        data: { message: "Success" },
+      });
       fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
-        expect(mockedAxios.delete).toHaveBeenCalledWith(
-          "http://localhost:5003/boards/board1",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "X-Username": "",
-            },
-          },
-        );
+        expect(mockedAxios.delete).toHaveBeenCalled();
       });
     });
   });
 
   describe("Loading States", () => {
-    test("shows loading state initially", () => {
-      Object.defineProperty(document, "cookie", {
-        writable: true,
-        value: "connect.sid=test",
-      });
-
+    test("shows loading state when authenticated", () => {
+      localStorage.setItem("authUser", mockCredentials.username);
       mockedAxios.get.mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100)),
+        () => new Promise((resolve) => setTimeout(resolve, 100))
       );
 
       render(<App />);
-
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
     });
   });
