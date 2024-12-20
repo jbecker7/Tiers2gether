@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { BASE_URL } from "./api";
+
 interface AuthProps {
   onAuthSuccess: (username: string) => void;
 }
@@ -20,14 +20,14 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
     try {
       const endpoint = isLogin ? "/auth/login" : "/auth/register";
       const response = await axios.post(
-        `${BASE_URL}/:5003${endpoint}`,
+        `http://localhost:5003${endpoint}`,
         {
           username,
           password,
         },
         {
           withCredentials: true, // Important for cookies
-        }
+        },
       );
 
       onAuthSuccess(response.data.username);
