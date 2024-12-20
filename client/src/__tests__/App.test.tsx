@@ -47,7 +47,7 @@ describe("App", () => {
     test("shows login screen when not authenticated", () => {
       render(<App />);
       expect(
-        screen.getByRole("heading", { name: /login/i })
+        screen.getByRole("heading", { name: /login/i }),
       ).toBeInTheDocument();
     });
 
@@ -75,11 +75,11 @@ describe("App", () => {
 
       await userEvent.type(
         screen.getByPlaceholderText(/enter username/i),
-        mockCredentials.username
+        mockCredentials.username,
       );
       await userEvent.type(
         screen.getByPlaceholderText(/enter password/i),
-        mockCredentials.password
+        mockCredentials.password,
       );
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
@@ -97,11 +97,11 @@ describe("App", () => {
 
       await userEvent.type(
         screen.getByPlaceholderText(/enter username/i),
-        mockCredentials.username
+        mockCredentials.username,
       );
       await userEvent.type(
         screen.getByPlaceholderText(/enter password/i),
-        mockCredentials.password
+        mockCredentials.password,
       );
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
@@ -126,7 +126,7 @@ describe("App", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /login/i })
+          screen.getByRole("heading", { name: /login/i }),
         ).toBeInTheDocument();
       });
     });
@@ -161,7 +161,7 @@ describe("App", () => {
             initialTags: ["tv", "anime"],
             creatorUsername: mockCredentials.username,
           }),
-          expect.any(Object)
+          expect.any(Object),
         );
       });
     });
@@ -177,7 +177,7 @@ describe("App", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText(/new board name/i)
+          screen.getByPlaceholderText(/new board name/i),
         ).toBeInTheDocument();
       });
 
@@ -205,7 +205,7 @@ describe("App", () => {
 
       await waitFor(() => {
         expect(screen.getAllByRole("button", { name: /delete/i })).toHaveLength(
-          2
+          2,
         );
       });
 
@@ -225,7 +225,7 @@ describe("App", () => {
     test("shows loading state when authenticated", () => {
       localStorage.setItem("authUser", mockCredentials.username);
       mockedAxios.get.mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100))
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
 
       render(<App />);

@@ -1,120 +1,122 @@
 .auth-container {
-    min-height: 100vh;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%);
-    padding: 1rem;
-  }
-  
-  .auth-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  
-  .auth-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    text-align: center;
-    color: #1a1a1a;
-  }
-  
-  .auth-subtitle {
-    text-align: center;
-    color: #666;
-    margin-bottom: 2rem;
-  }
-  
-  .auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .form-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-  }
-  
-  .form-input {
-    width: 90%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    transition: all 0.2s;
-  }
-  
-  .form-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-  
-  .auth-button {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .auth-button:hover {
-    background: #2563eb;
-  }
-  
-  .auth-button:disabled {
-    background: #93c5fd;
-    cursor: not-allowed;
-  }
-  .auth-logo {
-    display: block;
-    margin: 0 auto;
-    margin-bottom: 1.5rem;
-    max-width: 150px;
-    height: auto;
-  }
-  
-  .error-message {
-    background: #fee2e2;
-    color: #dc2626;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .switch-mode-button {
-    background: none;
-    border: none;
-    color: #3b82f6;
-    font-size: 0.875rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    margin-top: 1rem;
-    width: 100%;
-    text-align: center;
-  }
-  
-  .switch-mode-button:hover {
-    color: #2563eb;
-    text-decoration: underline;
-  }
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%);
+  padding: 1rem;
+}
+
+.auth-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-input {
+  width: 90%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.auth-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-button:hover {
+  background: #2563eb;
+}
+
+.auth-button:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
+.auth-logo {
+  display: block;
+  margin: 0 auto;
+  margin-bottom: 1.5rem;
+  max-width: 150px;
+  height: auto;
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.switch-mode-button {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-top: 1rem;
+  width: 100%;
+  text-align: center;
+}
+
+.switch-mode-button:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}

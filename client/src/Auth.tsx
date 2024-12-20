@@ -28,7 +28,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         },
         {
           withCredentials: true,
-        }
+        },
       );
       onAuthSuccess(response.data.username);
     } catch (err: any) {
