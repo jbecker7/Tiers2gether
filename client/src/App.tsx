@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import TierBoardComponent from "./TierBoard";
 import BoardManagement from "./BoardManagement";
-import { createTierBoard, getBoards, deleteBoard, updateBoard } from "./api";
+import { createTierBoard, getBoards, deleteBoard, updateBoard, BASE_URL } from "./api";
 import Auth from "./Auth";
 import { TierBoard } from "./types";
 import "./App.css";
@@ -21,7 +21,7 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       axios
-        .get("http://localhost:5003/auth/me", { withCredentials: true })
+        .get(`${BASE_URL}/auth/me`, { withCredentials: true })
         .then((response) => {
           setUsername(response.data.username);
         })
@@ -80,7 +80,7 @@ function App() {
   const handleLogout = async () => {
     try {
       await axios.post(
-        "http://localhost:5003/auth/logout",
+        `${BASE_URL}/auth/logout`,
         {},
         {
           withCredentials: true,

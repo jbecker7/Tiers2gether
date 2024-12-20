@@ -1,8 +1,9 @@
 import axios, { AxiosError } from "axios";
 import { TierBoard, Character, CreateBoardRequest } from "./types";
+
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:5003";
-const BASE_URL = "http://localhost:5003";
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || "http://localhost:5003";
+export const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5003";
 
 // Helper to get headers with username
 const getHeaders = () => {
